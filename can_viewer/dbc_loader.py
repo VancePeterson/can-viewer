@@ -23,7 +23,7 @@ class DBCLoader:
         """
         try:
             self.file_path = Path(file_path)
-            self.db = cantools.database.load_file(str(self.file_path))
+            self.db = cantools.database.load_file(str(self.file_path), strict=False)
             return True
         except Exception as e:
             print(f"Error loading DBC file: {e}")
