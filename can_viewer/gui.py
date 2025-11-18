@@ -57,18 +57,23 @@ class MainWindow(QMainWindow):
         # Central widget and main layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
+        main_layout = QHBoxLayout(central_widget)
 
-        # Top control panel
-        control_panel = self.create_control_panel()
-        main_layout.addWidget(control_panel)
-
-        # Splitter for message list and data display
+        # Splitter for left panel and data display
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Left: Message/PGN list with checkboxes
+        # Left side: Control panel + Message list
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+
+        control_panel = self.create_control_panel()
+        left_layout.addWidget(control_panel)
+
         message_list_group = self.create_message_list_panel()
-        splitter.addWidget(message_list_group)
+        left_layout.addWidget(message_list_group)
+
+        splitter.addWidget(left_panel)
 
         # Right: Live data display
         data_display_group = self.create_data_display_panel()
@@ -82,36 +87,43 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Ready - Load a DBC file to begin")
 
     def create_control_panel(self) -> QGroupBox:
-        """Create the top control panel."""
+        """Create the control panel."""
         group = QGroupBox("Configuration")
-        layout = QHBoxLayout()
+        layout = QVBoxLayout()
 
         # DBC file selection
-        self.dbc_label = QLabel("No DBC file loaded")
+        dbc_layout = QHBoxLayout()
+        dbc_layout.addWidget(QLabel("DBC File:"))
+        self.dbc_label = QLabel("No file loaded")
+        self.dbc_label.setStyleSheet("font-style: italic;")
+        dbc_layout.addWidget(self.dbc_label, 1)
+        layout.addLayout(dbc_layout)
+
         self.dbc_button = QPushButton("Load DBC File")
         self.dbc_button.clicked.connect(self.load_dbc_file)
-
-        layout.addWidget(QLabel("DBC File:"))
-        layout.addWidget(self.dbc_label)
         layout.addWidget(self.dbc_button)
 
         # PCAN channel selection
-        layout.addWidget(QLabel("PCAN Channel:"))
+        channel_layout = QHBoxLayout()
+        channel_layout.addWidget(QLabel("PCAN Channel:"))
         self.channel_combo = QComboBox()
         self.channel_combo.addItems([
             "PCAN_USBBUS1", "PCAN_USBBUS2", "PCAN_USBBUS3", "PCAN_USBBUS4",
             "PCAN_USBBUS5", "PCAN_USBBUS6", "PCAN_USBBUS7", "PCAN_USBBUS8"
         ])
-        layout.addWidget(self.channel_combo)
+        channel_layout.addWidget(self.channel_combo, 1)
+        layout.addLayout(channel_layout)
 
         # Bitrate selection
-        layout.addWidget(QLabel("Bitrate:"))
+        bitrate_layout = QHBoxLayout()
+        bitrate_layout.addWidget(QLabel("Bitrate:"))
         self.bitrate_combo = QComboBox()
         self.bitrate_combo.addItems([
             "125000", "250000", "500000", "1000000"
         ])
         self.bitrate_combo.setCurrentText("250000")
-        layout.addWidget(self.bitrate_combo)
+        bitrate_layout.addWidget(self.bitrate_combo, 1)
+        layout.addLayout(bitrate_layout)
 
         # Connect/Disconnect button
         self.connect_button = QPushButton("Connect")
@@ -119,7 +131,6 @@ class MainWindow(QMainWindow):
         self.connect_button.setEnabled(False)
         layout.addWidget(self.connect_button)
 
-        layout.addStretch()
         group.setLayout(layout)
         return group
 
@@ -325,7 +336,19 @@ class MainWindow(QMainWindow):
                         output_lines.append(f"  {signal_name}: {value}")
                     output_lines.append("")
 
+        # Save current scroll position
+        scrollbar = self.data_display.verticalScrollBar()
+        current_scroll_position = scrollbar.value()
+        is_at_bottom = current_scroll_position >= scrollbar.maximum() - 10
+
+        # Update content
         self.data_display.setPlainText("\n".join(output_lines))
+
+        # Restore scroll position (or stick to bottom if user was at bottom)
+        if is_at_bottom:
+            scrollbar.setValue(scrollbar.maximum())
+        else:
+            scrollbar.setValue(current_scroll_position)
 
     def closeEvent(self, event):
         """Handle application close."""
