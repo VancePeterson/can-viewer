@@ -1,0 +1,11 @@
+[project]
+name = "can-viewer"
+version = "0.1.0"
+description = "GUI application for viewing live CAN data from DBC files using PCAN USB adapter"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "cantools>=39.0.0",
+    "python-can>=4.4.0",
+    "pyqt6>=6.6.0",
+]
